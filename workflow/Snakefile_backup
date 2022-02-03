@@ -1,0 +1,170 @@
+# TO-DO:
+# Write a rule+function that will take output csvs and generate figures of TDH3 dustribution across all samples and ribosomal-cytoplasmic genes distribution for qc
+# Add to a get_data.py function that will take one csv (need to create one) file with all different strains that we have and append muber of strains done in each experiment.
+# Create a function tht will do clustering of the normalized genes and factors on esr_genes just as i did for Naama.
+# Fastqc 
+
+
+configfile: "config.yaml"
+
+def get_names(name='', with_name=False):
+    with open("workflow/rna_inner.txt", 'r') as handle:
+        b = handle.readlines()
+    if with_name:
+        sample_prefixes = [name+'.'+barcode.split('\t')[0] for barcode in b]
+    else:
+        sample_prefixes = [barcode.split('\t')[0] for barcode in b]
+    return sample_prefixes
+
+IDS= get_names(name=str(config['name']), with_name=True)
+
+
+rule demux:
+    input:
+        r1=expand("data/{samp}_S264_R1_001.fastq.gz", samp=config["name"]),
+        r2=expand("data/{samp}_S264_R2_001.fastq.gz", samp=config["name"]),
+        barcode=config['barcodes']
+    output:
+        pair2 = expand("demux/{id}.pair2.truncated.gz", id=IDS),
+        pair1 = expand("demux/{id}.pair1.truncated.gz", id=IDS),
+        settings_big = temp(expand("demux/{samp}.settings", samp=config["name"])),
+        discarded = temp(expand("demux/{id}.discarded.gz", id=IDS)),
+        singleton = temp(expand("demux/{id}.singleton.truncated.gz", id=IDS)),
+        unindentified = temp(expand("demux/{samp}.unidentified{suffix}.gz", samp=config["name"], suffix=['_1', '_2'])),
+        settings_small = expand("demux/{id}.settings",id=IDS)
+    params:
+        name=expand("demux/{name}", name=config["name"])
+    shell:
+        "AdapterRemoval --gzip --barcode-list {input.barcode} --trim3p 0 21  --barcode-mm 1 --file1 {input.r2} --file2 {input.r1} --basename {params.name} --threads 24 --settings {params.name}"
+
+rule umi_ident:
+    input:
+        pair2= "demux/{id}.pair2.truncated.gz",
+        pair1= "demux/{id}.pair1.truncated.gz"
+    log:
+        "logs/{id}.processed.log"
+    output:
+        read2 = "umi_extracted/{id}.read2.processed.fastq.gz",
+        read1 = "umi_extracted/{id}.read1.processed.fastq.gz"
+    shell:
+        "umi_tools extract --stdin={input.pair1} --read2-in={input.pair2} --bc-pattern=NNNNNNNNN --log={log} --stdout {output.read2}  --read2-out={output.read1}"
+        
+
+rule align:
+    input:
+        "demux/{id}.pair2.truncated.gz"
+    output:
+        temp("aligned/{id}.bam")
+    log:
+        "logs/alignment_logs/{id}.log"
+    params:
+        bowtie = "-p8 --local --very-sensitive --trim-to 30 -x",
+        genome = config['genome']
+    shell:
+        "(bowtie2 {params.bowtie} {params.genome} -U {input} | samtools view -Sb - > {output}) 2> {log}" 
+
+rule samtools_sort:
+    input:
+        "aligned/{id}.bam"
+    output:
+        protected("sorted_reads/{id}.bam")
+    shell:
+        "samtools sort -T sorted_reads/{wildcards.id} "
+        "-O bam {input} > {output}"
+
+rule count_all:
+    input:
+        "sorted_reads/{id}.bam"
+    output:
+        "counts/{id}.txt"
+    params:
+        p = "coverage -counts -s -a ",
+        gl = config['gene_list']
+    shell:
+        "bedtools {params.p} {params.gl} -b {input} > {output}"
+        
+rule generate_qc:
+    output:
+        res = 'results/qc_report.html'
+    params:
+        'results/qc_report'
+    shell:
+        "multiqc -n {params} ."
+        
+rule get_data:
+    output:
+        expand('results/csvs/{res}', res=[config['raw_results'], config['norm_results']])
+    params:
+        plate = config['plate'],
+        slist = config['strain_list']
+    shell:
+        'python scripts/get_data.py {params.plate} {params.slist} {output}'
+    
+
+
+rule umi_align:
+    input:
+        "umi_extracted/{id}.read1.processed.fastq.gz"
+    output:
+        temp("umi_aligned/{id}.bam")
+    log:
+        "logs/umi_alignment_logs/{id}.log"
+    params:
+        bowtie = "-p8 --local --very-sensitive --trim-to 30 -x",
+        genome = config['genome']
+    shell:
+        "(bowtie2 {params.bowtie} {params.genome} -U {input} | samtools view -Sb - > {output}) 2> {log}"
+rule umi_samtools_sort:
+    input:
+        "umi_aligned/{id}.bam"
+    output:
+        protected("umi_sorted_reads/{id}.bam")
+    shell:
+        "samtools sort {input} -o {output}"
+rule umi_index:
+    input:
+        "umi_sorted_reads/{id}.bam"
+    output:
+        "umi_sorted_reads/{id}.bam.bai"
+    shell:
+        "samtools index {input}"
+rule umi_dedup:
+    input:
+        reads = "umi_sorted_reads/{id}.bam",
+        index = "umi_sorted_reads/{id}.bam.bai"
+    output:
+        "umi_dedup/{id}.dedup.bam"
+    params:
+        "umi_dedup/{id}"
+    shell:
+        "umi_tools dedup -I {input.reads} --output-stats={params} -S {output}"
+rule count_umi:
+    input:
+        "umi_dedup/{id}.dedup.bam"
+    output:
+        "counts_umi/{id}.txt"
+    params:
+        p = "coverage -counts -s -a ",
+        gl = config['gene_list']
+    shell:
+        "bedtools {params.p} {params.gl} -b {input} > {output}"
+rule get_data_umi:
+    output:
+        expand('results_umis/csvs/{res}', res=[config['raw_results'], config['norm_results']])
+    params:
+        plate = config['plate'],
+        slist = config['strain_list']
+    shell:
+        'python scripts/get_data.py {params.plate} {params.slist} {output}'
+
+rule all:
+    input:  
+        # a = expand("sorted_reads/{id}.bam", id=IDS),
+        # b = expand("demux/{id}.pair2.truncated.gz", id=IDS),
+        c = expand("counts/{id}.txt", id=IDS),
+        d = "results/qc_report.html",
+        e = expand('results/csvs/{res}', res=[config['raw_results'], config['norm_results']]),
+        f = expand("umi_sorted_reads/{id}.bam.bai", id=IDS),
+        g = expand("umi_dedup/{id}.dedup.bam", id=IDS),
+        h = expand( "counts_umi/{id}.txt", id=IDS),
+        i = expand('results_umis/csvs/{res}', res=[config['raw_results'], config['norm_results']])

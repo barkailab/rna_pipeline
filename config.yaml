@@ -1,0 +1,14 @@
+# $module load bowtie2/2.3.5.1 samtools/1.9 bedtools adapterremoval/2.3.1 bedtools/2.26.0
+# activate my conda environment $conda activate /home/labs/barkailab/vovam/.conda/envs/trial/
+
+#This stuff is pretty constant between experiments
+barcodes: /home/labs/barkailab/vovam/pipelines/rna_pipe/data/rna_inner.txt
+genome: /home/labs/barkailab/vovam/courses/snkameake_rna_exp/cer_genome/cer_mnase
+gene_list: /home/labs/barkailab/vovam/courses/snkameake_rna_exp/gene_list_wmnase.bed 
+
+#change this for each experiment
+name: RNA3
+plate: data/plate.csv # in format of csv file with num of strain in each well from A to H from 1 to 12 
+strain_list: data/strain_list.csv # in csv format number:name
+raw_results: raw_counts_2022_01_17.csv
+norm_results: norm_reads_2022_01_17.csv
