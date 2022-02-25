@@ -21,6 +21,7 @@
 ### How to run - 
 * Snakemake parses the directory from whic you will try to run it, and finds workflow/Snakefile, /Snakefile, snakefile or workflow/snakefile. 
 * To dry run it execute `snakemake all -np` 
+* To dry run the python script that parses the counts files and outputs dataframes execute `python scripts/get_data.py data/plate.csv data/strain_list.csv results/csvs/raw_df.csv results/csvs/norm_df.csv` as it is exact command that the pipeline will run and I inckuded some counts files to simulate the actual data. 
 * To build directed acylic graph of the jobs that will be done execute `snakemake all --dag | dot -Tsvg > dag.svg`
 * To run the whole script locally execute `snakemake all --cores 24 `
 * To run the whole script on the cluster execute `snakemake all --cluster "bsub -q new-long -n 24" -j 25 `
