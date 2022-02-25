@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('Agg')
-# matplotlib.set('fig', dpi=160)
 import seaborn as sns
 sns.set_style('whitegrid')
 from datetime import date
@@ -12,7 +11,14 @@ import sys
 import os
 
 #Generating dictionary of well:name_of_sample 
-def get_wells(plate, strain_list):  
+def get_wells(plate, strain_list):
+    '''
+    Generating dict that connects names of samples and their postions in the plate
+    
+    input:
+    plate -> csv file of 8 on 12 matrix with number in it each number indicate one strain
+    strain_list -> csv file that connects number of the strain to it's name
+    '''
     wells = {}
     for key,value in plate.to_dict().items():
         for letter, sample in value.items():
@@ -27,6 +33,13 @@ def get_wells(plate, strain_list):
 
 # Generating dataframe of raw_counts of reads
 def get_counts(counts_files, wells):
+    '''
+    Counts raw reads of each samples and creates data frame of it
+    
+    input:
+    counts_files -> list of files with genomic reads counts
+    wells -> dict of number:strain 
+    '''
     counts_df = pd.DataFrame()
     for file in counts_files:
         if '.txt' in file:
@@ -38,8 +51,15 @@ def get_counts(counts_files, wells):
     return counts_df
 
 def get_reads(raw_data):
+    '''
+    Counting reads from raw reads DataFrame and sorting samples alphabetically,
+    the dashed line is a common threshold of 250000 reads
+    
+    input:
+    raw_data -> DataFrame with raw reads counts
+    '''
     plt.figure(figsize=(30,20))
-    raw_data.sum().plot.bar()
+    raw_data.sort_index(axis=1).sum().plot.bar()
     plt.axhline(250000, color='k', linestyle='dashed')
     plt.savefig('results/reads_barplot')
 
@@ -64,5 +84,6 @@ if __name__ == "__main__":
 
     raw_df.to_csv(sys.argv[3])
     norm_df.to_csv(sys.argv[4])
+
 
 
