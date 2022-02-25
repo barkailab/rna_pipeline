@@ -17,8 +17,6 @@ def get_names(name='', with_name=False):
 
 IDS= get_names(name=str(config['name']), with_name=True)
 
-
-
 rule demux:
     input:
         r1=expand("data/{samp}_R1_001.fastq.gz", samp=config["name"]),
@@ -48,7 +46,7 @@ rule umi_ident:
         read1 = "umi_extracted/{id}.read1.processed.fastq.gz"
     shell:
         "umi_tools extract --stdin={input.pair1} --read2-in={input.pair2} --bc-pattern=NNNNNNNNN --log={log} --stdout {output.read2}  --read2-out={output.read1}"
-        
+    
 rule bowtie_map:
     input:
         "umi_extracted/{id}.read1.processed.fastq.gz"

@@ -7,7 +7,7 @@ gene_list: /home/labs/barkailab/vovam/courses/snkameake_rna_exp/gene_list_wmnase
 
 #change this for each experiment
 barcodes: data/rna_inner.txt
-name: RNA3_S264
+name: RNA4_S260
 plate: data/plate.csv # in format of csv file with num of strain in each well from A to H from 1 to 12 
 strain_list: data/strain_list.csv # in csv format number:name
 raw_results: raw_counts_2022_01_17.csv
