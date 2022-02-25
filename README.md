@@ -8,7 +8,7 @@
 
 * Snakemake parses the directory from whic you will try to run it, and finds workflow/Snakefile, /Snakefile, snakefile or workflow/snakefile. 
 * To dry run it execute `snakemake all -np` 
-* To build directed acylic graph of the jobs that will be done execute `snakemake --dag | dot -Tsvg > dag.svg`
+* To build directed acylic graph of the jobs that will be done execute `snakemake all --dag | dot -Tsvg > dag.svg`
 * To run the whole script locally execute `snakemake all --cores 24 `
 * To run the whole script on the cluster execute `snakemake all --cluster "bsub -q new-long -n 24" -j 25 `
 
