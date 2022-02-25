@@ -1,4 +1,3 @@
-*fastq.gz
 .ipynb_checkpoints/
 .snakemake/
 nohup.out
