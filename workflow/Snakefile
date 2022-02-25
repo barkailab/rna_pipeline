@@ -7,7 +7,7 @@
 configfile: "config.yaml"
 
 def get_names(name='', with_name=False):
-    with open("workflow/rna_inner.txt", 'r') as handle:
+    with open("data/rna_inner.txt", 'r') as handle:
         b = handle.readlines()
     if with_name:
         sample_prefixes = [name+'.'+barcode.split('\t')[0] for barcode in b]
@@ -21,8 +21,8 @@ IDS= get_names(name=str(config['name']), with_name=True)
 
 rule demux:
     input:
-        r1=expand("data/{samp}_S264_R1_001.fastq.gz", samp=config["name"]),
-        r2=expand("data/{samp}_S264_R2_001.fastq.gz", samp=config["name"]),
+        r1=expand("data/{samp}_R1_001.fastq.gz", samp=config["name"]),
+        r2=expand("data/{samp}_R2_001.fastq.gz", samp=config["name"]),
         barcode=config['barcodes']
     output:
         pair2 = expand("demux/{id}.pair2.truncated.gz", id=IDS),

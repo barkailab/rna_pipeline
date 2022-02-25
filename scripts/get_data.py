@@ -31,48 +31,28 @@ def get_counts(counts_files, wells):
     for file in counts_files:
         if '.txt' in file:
             data = pd.read_csv(os.path.join('counts',file), delim_whitespace=True, header=None).iloc[:,6]
-            col_name = file.split('_')[0].split('.')[1]
+            col_name = file.split('_')[0] + file.split('_')[1].split('.')[1]
             counts_df.loc[:, col_name] = data
     counts_df.columns = wells.values()
     counts_df.index = pd.read_csv(os.path.join('counts',file), delim_whitespace=True, header=None).iloc[:,4].values-1
     return counts_df
 
-def mnase_reads(raw_data):
-    mnase_reads = raw_data.loc['MNASE', :].divide(raw_data.sum(axis=0))
-    plt.figure(dpi=160)
-    mnase_reads.plot.hist()
-    plt.title('Reads mapped on Mnase')
-    plt.savefig('results/mnase_dist')
-
-def total_reads(raw_data):
-    plt.figure(figsize=(20,10), dpi=60)
-    raw_data.sort_index(axis=1).plot.bar()
-    plt.axhline(y=200000, linestyle='dashed')
-    plt.title('Total reads')
-    plt.savefig('results/total_reads')
-
-def get_heatmap(norm_data):
-    plt.figure(figsize=(20,20), dpi=60)
-    sns.heatmap(norm_data.sort_index(axis=1).corr(), cmap='YlGnBu', vmin=0.92)
-    plt.title('Correlation of whole genome expression')
-    plt.savefig('results/heatmap')
-
-def get_figs(raw_data, norm_data):
-    mnase_reads(raw_data)
-    total_reads(raw_data)
-    get_heatmap(norm_data)
-    
+def get_reads(raw_data):
+    plt.figure(figsize=(30,20))
+    raw_data.sum().plot.bar()
+    plt.axhline(250000, color='k', linestyle='dashed')
+    plt.savefig('results/reads_barplot')
 
 if __name__ == "__main__":
 
     #Always the same paths and files either constant or defined by snakemake
-    full_index = pd.read_csv('/home/labs/barkailab/vovam/pipelines/rna_pipe/data/index_for_df.csv', index_col=0)
+    full_index = pd.read_csv('data/index_for_df.csv', index_col=0)
+
     counts_files = sorted(os.listdir(r'counts/'))
 
     #Getting needed paths for analysis from config of snakemake
     plate = pd.read_csv(sys.argv[1], index_col=0).fillna('Nothing')
     strain_list = pd.read_csv(sys.argv[2], index_col=0)
-
 
     wells=get_wells(plate, strain_list)
     counts = get_counts(counts_files, wells)
@@ -80,7 +60,7 @@ if __name__ == "__main__":
     raw_df = full_index.join(counts).fillna(0).set_index('name')
     norm_df = np.log2((raw_df.divide(raw_df.sum(axis=0).values, axis=1) * 1e6).replace(0,1))
 
-    # get_figs(raw_df, norm_df)
+    get_reads(raw_df)
 
     raw_df.to_csv(sys.argv[3])
     norm_df.to_csv(sys.argv[4])
