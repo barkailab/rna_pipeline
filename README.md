@@ -7,6 +7,9 @@
 ## The output is raw reads dataframe and log2 normalized to million reads dataframe
 ## Look for the snakemake script in a [workflow folder](https://github.com/vmindel/rna_pipeline/blob/master/workflow/Snakefile)
 
+## WEXAC specific instructions:
+* execute `module load bowtie2/2.3.5.1 samtools/1.9 bedtools adapterremoval/2.3.1 bedtools/2.26.0` to load all needed packages for the pipeline.
+
 ### What to change - 
 #### In root directory there is a config.yaml file:
 * genome - insert path to your genome built with bowtie2
