@@ -44,7 +44,7 @@ def get_counts(counts_files, wells):
     for file in counts_files:
         if '.txt' in file:
             data = pd.read_csv(os.path.join('counts',file), delim_whitespace=True, header=None).iloc[:,6]
-            col_name = file.split('_')[0] + file.split('_')[1].split('.')[1]
+            col_name = file.split('.')[1].split('_')[0]
             counts_df.loc[:, col_name] = data
     counts_df.columns = wells.values()
     counts_df.index = pd.read_csv(os.path.join('counts',file), delim_whitespace=True, header=None).iloc[:,4].values-1
